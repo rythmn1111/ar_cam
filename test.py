@@ -29,37 +29,61 @@ try:
     #Set the backlight to 50
     disp.bl_DutyCycle(50)
 
-    logging.info("showing sad.gif")
+    logging.info("showing GIFs in rotation")
     
-    # Open and display the sad.gif
-    gif_image = Image.open("sad.gif")
+    # List of GIF files to rotate through
+    gif_files = ["1.gif", "2.gif", "3.gif", "4.gif"]
     
-    # If it's an animated GIF, loop through frames
+    # Loop through GIFs continuously
     try:
-        frame_count = 0
         while True:
-            # Resize to fit display if needed
-            resized_image = gif_image.copy()
-            if resized_image.size != (disp.width, disp.height):
-                resized_image = resized_image.resize((disp.width, disp.height), Image.LANCZOS)
-            
-            # Convert to RGB mode if needed (GIFs might be in palette mode)
-            if resized_image.mode != 'RGB':
-                resized_image = resized_image.convert('RGB')
-            
-            # Display the frame
-            disp.ShowImage(resized_image)
-            
-            frame_count += 1
-            
-            # Try to move to next frame
-            try:
-                gif_image.seek(gif_image.tell() + 1)
-                time.sleep(0.1)  # Delay between frames
-            except EOFError:
-                # End of frames, loop back to start
-                gif_image.seek(0)
-                time.sleep(0.1)
+            for gif_file in gif_files:
+                logging.info(f"Loading {gif_file}")
+                gif_image = Image.open(gif_file)
+                
+                # Get the number of frames in the GIF
+                try:
+                    frame_count = gif_image.n_frames
+                except AttributeError:
+                    frame_count = 1
+                
+                # Display each frame of the current GIF
+                for frame_num in range(frame_count):
+                    gif_image.seek(frame_num)
+                    
+                    # Copy the current frame
+                    current_frame = gif_image.copy()
+                    
+                    # Fit to display without scaling up
+                    img_width, img_height = current_frame.size
+                    display_width, display_height = disp.width, disp.height
+                    
+                    # Only scale down if image is larger than display
+                    if img_width > display_width or img_height > display_height:
+                        # Calculate scale factor to fit within display
+                        scale = min(display_width / img_width, display_height / img_height)
+                        new_width = int(img_width * scale)
+                        new_height = int(img_height * scale)
+                        current_frame = current_frame.resize((new_width, new_height), Image.LANCZOS)
+                    
+                    # Create a blank image with display size
+                    display_image = Image.new('RGB', (display_width, display_height), 'BLACK')
+                    
+                    # Center the image on the display
+                    paste_x = (display_width - current_frame.width) // 2
+                    paste_y = (display_height - current_frame.height) // 2
+                    
+                    # Convert to RGB if needed before pasting
+                    if current_frame.mode != 'RGB':
+                        current_frame = current_frame.convert('RGB')
+                    
+                    display_image.paste(current_frame, (paste_x, paste_y))
+                    
+                    # Display the frame
+                    disp.ShowImage(display_image)
+                    time.sleep(0.1)  # Delay between frames
+                
+                gif_image.close()
                 
     except KeyboardInterrupt:
         pass
