@@ -34,6 +34,9 @@ try:
     # List of GIF files to rotate through
     gif_files = ["1.gif", "2.gif", "3.gif", "4.gif"]
     
+    # Duration to show each GIF (in seconds)
+    gif_duration = 3
+    
     # Loop through GIFs continuously
     try:
         while True:
@@ -47,9 +50,13 @@ try:
                 except AttributeError:
                     frame_count = 1
                 
-                # Display each frame of the current GIF
-                for frame_num in range(frame_count):
-                    gif_image.seek(frame_num)
+                # Record start time for this GIF
+                start_time = time.time()
+                frame_num = 0
+                
+                # Display frames for the specified duration
+                while time.time() - start_time < gif_duration:
+                    gif_image.seek(frame_num % frame_count)
                     
                     # Copy the current frame
                     current_frame = gif_image.copy()
@@ -81,9 +88,12 @@ try:
                     
                     # Display the frame
                     disp.ShowImage(display_image)
-                    time.sleep(0.1)  # Delay between frames
+                    time.sleep(0.05)  # Delay between frames
+                    
+                    frame_num += 1
                 
                 gif_image.close()
+                logging.info(f"Finished {gif_file}, moving to next")
                 
     except KeyboardInterrupt:
         pass
